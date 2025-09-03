@@ -1,3 +1,3 @@
 # Minibot `bin/`
 
-Testing binaries are generated
+Generated testing binaries are placed here
