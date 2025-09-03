@@ -1,0 +1,15 @@
+# Ignore everything
+*
+# But these files
+!.gitignore
+!.gitattributes
+!CMakeLists.txt
+!LICENSE
+!readme.MD
+# And these subdirectories
+!bin/
+!build/
+!include/
+!lib/
+!src/
+!test/
