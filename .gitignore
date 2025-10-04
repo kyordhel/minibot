@@ -5,6 +5,7 @@
 !.gitattributes
 !CMakeLists.txt
 !LICENSE
+!minibot-driver_import.cmake
 !readme.MD
 # And these subdirectories
 !bin/
