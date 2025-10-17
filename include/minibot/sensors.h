@@ -13,6 +13,6 @@ uint8_t lidar_sens_init();
 
 bool floor_sens_read(float data[4]);
 bool light_sens_read(float data[8]);
-bool lidar_sens_read(uint8_t data[4]);
+bool lidar_sens_read(uint8_t data[8]);
 bool lidar_sens_readf(float data[8]);
 uint8_t lidar_sens_count();

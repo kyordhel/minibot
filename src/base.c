@@ -12,6 +12,17 @@
 #include <unistd.h>
 #include <termios.h>
 
+/* ** *****************************************************************
+* Types and structures
+** ** ****************************************************************/
+struct{
+	float front;
+	float back;
+	float left;
+	float right;
+} typedef spds_t;
+typedef spds_t pwms_t;
+
 struct{
 	char  mv[8]; // Motor version
 	uint8_t  mt; // Motor type
@@ -24,19 +35,43 @@ struct{
 	float    kd; // PID derivative constant
 }typedef flash_data;
 
+/* ** *****************************************************************
+* Global variables
+** ** ****************************************************************/
 static int serial = 0;
 flash_data fd;
+static spds_t current_spd;
+static pwms_t current_pwm;
 
+
+/* ** *****************************************************************
+* Prototypes
+** ** ****************************************************************/
 bool read_flash();
 bool serial_writeline(const char* str);
 bool serial_readline(char* str, size_t max);
 
+/* ** *****************************************************************
+* Prototypes (helpers)
+** ** ****************************************************************/
 static inline void clamp(float*value, float min, float max);
 static inline void clamp2one(float*value);
 static inline encoders enc_diff(encoders e1, encoders e0);
 static inline int32_t enc_avg_diff(encoders e1, encoders e0);
+static inline int32_t enc_avg_diff(encoders e1, encoders e0);
+static inline void update_current_pwm_values(float l, float r, float f, float b);
+static inline void update_current_speed_values(float l, float r, float f, float b);
 
 
+/* ** *****************************************************************
+* Function definitions
+** ** ****************************************************************/
+bool init_mc(const char* serial_path){
+	if( !serial_init(serial_path) || !detect_mc() )
+		return false;
+	stop();
+	return true;
+}
 
 
 bool serial_init(const char* serial_path){
@@ -196,6 +231,7 @@ void set_pwm(float left, float right, float front, float back){
 	char buffer[32];
 	clamp2one(&left);	clamp2one(&right);
 	clamp2one(&front);	clamp2one(&back);
+	update_current_pwm_values(left, right, front, back);
 	int16_t l = 3600 * left;
 	int16_t r = 3600 * right;
 	int16_t f = 3600 * front;
@@ -205,10 +241,17 @@ void set_pwm(float left, float right, float front, float back){
 }
 
 
+void get_pwm(float* left, float* right, float* front, float* back){
+	*left  = current_pwm.left;     *right = current_pwm.right;
+	*front = current_pwm.front;    *back  = current_pwm.back;
+}
+
+
 void set_speed(float left, float right, float front, float back){
 	char buffer[32];
 	clamp2one(&left);	clamp2one(&right);
 	clamp2one(&front);	clamp2one(&back);
+	update_current_speed_values(left, right, front, back);
 	int16_t l = 1000 * left;
 	int16_t r = 1000 * right;
 	int16_t f = 1000 * front;
@@ -216,6 +259,13 @@ void set_speed(float left, float right, float front, float back){
 	sprintf(buffer, "$spd:%d,%d,%d,%d#", l, f, b, r);
 	serial_writeline(buffer);
 }
+
+
+void get_speed(float* left, float* right, float* front, float* back){
+	*left  = current_spd.left;     *right = current_spd.right;
+	*front = current_spd.front;    *back  = current_spd.back;
+}
+
 
 float move_y(float dist){
 	// 0.1m → ~926 encoder pulses
@@ -277,6 +327,11 @@ float rotate(float angle){
 	return curr_ang;
 }
 
+
+/* ** *****************************************************************
+* Function Definitions (helpers)
+** ** ****************************************************************/
+
 static inline
 encoders enc_diff(encoders e1, encoders e0){
 	encoders diff;
@@ -308,6 +363,24 @@ static inline
 void clamp2one(float*value){
 	if(*value < -1) *value = -1;
 	if(*value >  1) *value =  1;
+}
+
+
+static inline
+void update_current_pwm_values(float l, float r, float f, float b){
+	current_spd.left  = 0;    current_spd.front = 0;
+	current_spd.back  = 0;    current_spd.right = 0;
+	current_pwm.left  = l;    current_pwm.front = f;
+	current_pwm.back  = b;    current_pwm.right = r;
+}
+
+
+static inline
+void update_current_speed_values(float l, float r, float f, float b){
+	current_pwm.left  = 0;    current_pwm.front = 0;
+	current_pwm.back  = 0;    current_pwm.right = 0;
+	current_spd.left  = l;    current_spd.front = f;
+	current_spd.back  = b;    current_spd.right = r;
 }
 /*
 Encoders: 78-80 pulses / 10ms (max speed, pwm=3600)

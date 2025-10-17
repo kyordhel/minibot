@@ -10,10 +10,9 @@ if(DEFINED MINIBOT_DRIVER_BIN_PATH)
     set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${MINIBOT_DRIVER_BIN_PATH})
 endif()
 
-set(MINIBOT_DRIVER_BUILD_TEST   FALSE  )
-message("  MINIBOT_DRIVER_BUILD_TEST   is ${MINIBOT_DRIVER_BUILD_TEST}")
+set(MINIBOT_DRIVER_BUILD_TEST FALSE)
 
-add_subdirectory(${MINIBOT_DRIVER_PATH} minibot)
+add_subdirectory(${MINIBOT_DRIVER_PATH} minibot-driver)
 unset (CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 
 # ## ##################################################################
@@ -44,9 +43,9 @@ unset (CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 #     message("Using MINIBOT_DRIVER_FETCH_FROM_GIT_PATH from environment ('${MINIBOT_DRIVER_FETCH_FROM_GIT_PATH}')")
 # endif ()
 #
-# set(MINIBOT_DRIVER_PATH "${MINIBOT_DRIVER_PATH}" CACHE PATH "Path to the tcpMinibot API")
-# set(MINIBOT_DRIVER_FETCH_FROM_GIT "${MINIBOT_DRIVER_FETCH_FROM_GIT}" CACHE BOOL "Set to ON to download the tcpMinibot API from git if unlocatable")
-# set(MINIBOT_DRIVER_FETCH_FROM_GIT_PATH "${MINIBOT_DRIVER_FETCH_FROM_GIT_PATH}" CACHE FILEPATH "location to download tcpMinibot API")
+# set(MINIBOT_DRIVER_PATH "${MINIBOT_DRIVER_PATH}" CACHE PATH "Path to the Minibot driver")
+# set(MINIBOT_DRIVER_FETCH_FROM_GIT "${MINIBOT_DRIVER_FETCH_FROM_GIT}" CACHE BOOL "Set to ON to download the Minibot driver from git if unlocatable")
+# set(MINIBOT_DRIVER_FETCH_FROM_GIT_PATH "${MINIBOT_DRIVER_FETCH_FROM_GIT_PATH}" CACHE FILEPATH "location to download Minibot driver")
 #
 # if (NOT MINIBOT_DRIVER_PATH)
 #     if (MINIBOT_DRIVER_FETCH_FROM_GIT)
@@ -70,7 +69,7 @@ unset (CMAKE_RUNTIME_OUTPUT_DIRECTORY)
 #         set(FETCHCONTENT_BASE_DIR ${FETCHCONTENT_BASE_DIR_SAVE})
 #     else ()
 #         message(FATAL_ERROR
-#                 "API location was not specified. Please set MINIBOT_DRIVER_PATH or set MINIBOT_DRIVER_FETCH_FROM_GIT to on to fetch from git."
+#                 "Minibot driver location was not specified. Please set MINIBOT_DRIVER_PATH or set MINIBOT_DRIVER_FETCH_FROM_GIT to on to fetch from git."
 #                 )
 #     endif ()
 # endif ()
