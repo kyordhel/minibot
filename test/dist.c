@@ -19,7 +19,7 @@ int main(int argc, char const **argv){
 
 	printf("\n");
 	while(true){
-		printf("\rLight:");
+		printf("\rDistance:");
 		dist_sens_read(data);
 		for(uint8_t i = 0; i < 8; ++i) printf(" %0.4f", data[i]);
 		fflush(stdout);
