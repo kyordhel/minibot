@@ -61,6 +61,7 @@ target_link_libraries(test-lidar
   minibot-driver
 )
 
+
 add_executable(test-linesense
   ${PROJECT_SOURCE_DIR}/test/linesense.c
 )
@@ -69,6 +70,16 @@ target_link_libraries(test-linesense
   minibot-driver
 )
 
+
+add_executable(test-dist
+  ${PROJECT_SOURCE_DIR}/test/dist.c
+)
+
+target_link_libraries(test-dist
+  minibot-driver
+)
+
+
 add_executable(test-turret
   ${PROJECT_SOURCE_DIR}/test/turret.c
 )
@@ -76,6 +87,7 @@ add_executable(test-turret
 target_link_libraries(test-turret
   minibot-driver
 )
+
 
 set(CURSES_NEED_NCURSES TRUE)
 set(CURSES_NEED_WIDE TRUE)

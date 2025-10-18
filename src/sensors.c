@@ -13,6 +13,7 @@
 #define LIDAR_MUX_ADDR 0x70
 #define LIDAR_DEF_ADDR 0x29
 #define LIGHT_SEN_ADDR 0x48
+#define DIST_SEN_ADDR  0x49
 #define FLOOR_SEN_ADDR 0x4b
 
 #define ADS7830_SINGLE       0x80
@@ -83,6 +84,11 @@ void find_sensors(){
 	enumerate_devices(i2c_slaves);
 }
 
+bool dist_sens_init(){
+	if(!i2c_slaves) find_sensors();
+	return true;
+}
+
 bool light_sens_init(){
 	if(!i2c_slaves) find_sensors();
 	return true;
@@ -124,6 +130,26 @@ uint8_t lidar_sens_init(){
 	return lidar_count;
 }
 
+
+bool dist_sens_read(float data[6]){
+	uint8_t raw[8];
+	bool res = adc_read_all(DIST_SEN_ADDR, raw);
+	for(uint8_t i = 0; i < 6; ++i)
+		data[i] = raw[i]/255.0;
+	return res;
+}
+
+
+bool dist_sens_readu(uint8_t data[6]){
+	uint8_t raw[8];
+	bool res = adc_read_all(DIST_SEN_ADDR, raw);
+	for(uint8_t i = 0; i < 6; ++i)
+		data[i] = raw[i];
+	return res;
+}
+
+
+
 bool floor_sens_read(float data[4]){
 	uint8_t raw[8];
 	bool res = adc_read_all(FLOOR_SEN_ADDR, raw);
@@ -143,7 +169,7 @@ bool light_sens_read(float data[8]){
 }
 
 
-bool lidar_sens_read(uint8_t data[8]){
+bool lidar_sens_readu(uint8_t data[8]){
 	for(uint8_t i = 0; i < 8; ++i){
 		if(!lidars[i]) break;
 		int res = lidar_read(lidars[i]);
@@ -153,12 +179,12 @@ bool lidar_sens_read(uint8_t data[8]){
 }
 
 
-bool lidar_sens_readf(float data[8]){
+bool lidar_sens_read(float data[8]){
 	uint8_t raw[8];
 	bool res = lidar_read_all(raw);
 	for(uint8_t i = 0; i < 8; ++i)
 		// data[i] = raw[i] != 0xff ? raw[i] * 0.001 : 0.0/0.0;
-		data[i] = raw[i] != 0xff ? raw[i] * 0.001 : 4e38;
+		data[i] = raw[i] != 0xff ? raw[i] * 0.001 : -1.0;
 
 	return res;
 }

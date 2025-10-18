@@ -16,10 +16,16 @@ size_t win_btm_curr_row = 1;
 bool shut_down = false;
 uint8_t lidar_count = 0;
 pthread_t asp_thread;
+bool dist_ok  = false;
+bool floor_ok = false;
+bool lidar_ok = false;
+bool light_ok = false;
 
 void init_base(const char* serial_path);
 void init_sensors(const char* i2c_bus_path);
 void update_sensors();
+void update_sen_info(int row, const char* caption, float* data, uint8_t dcount, uint8_t decimals);
+void update_batt(int row, const char* caption, float vbat, float maxVbat);
 void init_windows();
 void destroy_windows();
 void ctrlc_handler(int signum);
@@ -65,7 +71,6 @@ void init_base(const char* serial_path){
 
 
 void init_sensors(const char* i2c_bus_path){
-	bool    bres;
 	// 1. Initialize I²C bus
 	if( !i2c_init(i2c_bus_path) ) {
 		fprintf(stderr, "Error %i opening I2C bus %s: %s\n", errno, i2c_bus_path, strerror(errno));
@@ -76,57 +81,85 @@ void init_sensors(const char* i2c_bus_path){
 
 	// 3. Initialize sensors
 	// 3.1. Initialize light source detector (turret) on 0x
-	bres = light_sens_init();
-	printf("Light sensor initialization: %s\n", bres ? "OK" : "Err");
+	light_ok = light_sens_init();
+	printf("Light sensor initialization: %s\n", light_ok ? "OK" : "Err");
 	// 3.2. Initialize line detectors (floor) on 0x
-	bres = floor_sens_init();
-	printf("Floor sensor initialization: %s\n", bres ? "OK" : "Err");
+	floor_ok = floor_sens_init();
+	printf("Floor sensor initialization: %s\n", floor_ok ? "OK" : "Err");
 	// 3.3. Initialize obstacle detectors (LIDAR) on 0x70
-	lidar_count = lidar_sens_init();
-	printf("LIDAR sensor initialization: %s (%d detected)\n", lidar_count > 0 ? "OK" : "Err", lidar_count);
+	dist_ok  = lidar_sens_init();
+	printf("IR obstacle detection initialization: %s\n", dist_ok ? "OK" : "Err");
+	// 3.3. Initialize obstacle detectors (LIDAR) on 0x70
+	lidar_ok = (lidar_count = lidar_sens_init()) > 0;
+	printf("LIDAR sensor initialization: %s (%d detected)\n", lidar_ok ? "OK" : "Err", lidar_count);
+}
+
+
+void update_sen_info(int row, const char* caption, float* data, uint8_t dcount, uint8_t decimals){
+	char fmt[16];
+	char str[64];
+	char* cc;
+
+	sprintf(fmt, " %%0.%uf", decimals);
+	sprintf(str, caption);
+	cc = str + strlen(str);
+
+	if(data && dcount > 0){
+		for(uint8_t i = 0; i < dcount; ++i){
+			sprintf(cc, fmt, data[i]);
+			cc = str + strlen(str);
+		}
+	}
+	else
+		sprintf(cc, "Not connected");
+
+	wmove(win_top, row, 0);
+	wprintw(win_top, str);
+}
+
+
+void update_batt(int row, const char* caption, float vbat, float maxVbat){
+	char str[64];
+	sprintf(str, "Batt:  %0.2fV (%0.1f%)\n", vbat, 100.0*vbat/maxVbat);
+	wmove(win_top, row, 0);
+	wprintw(win_top, str);
 }
 
 
 void update_sensors(){
-	char str[64];
-	char* cc;
-
 	float data[8];
-	// light_sens_read(data);
-	sprintf(str, "Light:");
-	cc = str + strlen(str);
-	for(uint8_t i = 0; i < 8; ++i){
-		sprintf(cc, " %0.4f", data[i]);
-		cc = str + strlen(str);
-	}
-	wmove(win_top, 0, 0);
-	wprintw(win_top, str);
 
-	// lidar_sens_readf(data);
-	sprintf(str, "LiDAR:");
-	cc = str + strlen(str);
-	for(uint8_t i = 0; i < lidar_count; ++i){
-		sprintf(cc, " %0.3f", data[i]);
-		cc = str + strlen(str);
+	if (lidar_ok){
+		lidar_sens_read(data);
+		update_sen_info(0, "LiDAR:", data, lidar_count, 3);
 	}
-	wmove(win_top, 1, 0);
-	wprintw(win_top, str);
+	else
+		update_sen_info(0, "LiDAR:", NULL, 0, 3);
 
-	// floor_sens_read(data);
-	sprintf(str, "Floor:");
-	cc = str + strlen(str);
-	for(uint8_t i = 0; i < 4; ++i){
-		sprintf(cc, " %0.4f", data[i]);
-		cc = str + strlen(str);
+	if (dist_ok){
+		dist_sens_read(data);
+		update_sen_info(1, "Dist: ", data, 6, 4);
 	}
-	wmove(win_top, 2, 0);
-	wprintw(win_top, str);
+	else
+		update_sen_info(1, "Dist: ", NULL, 0, 4);
+
+	if (light_ok){
+		light_sens_read(data);
+		update_sen_info(2, "Light:", data, 8, 4);
+	}
+	else
+		update_sen_info(2, "Light:", NULL, 0, 4);
+
+	if (floor_ok){
+		floor_sens_read(data);
+		update_sen_info(3, "Floor:", data, 4, 4);
+	}
+	else
+		update_sen_info(3, "Floor:", NULL, 0, 4);
 
 	float vbat = 7.2;
 	// float vbat = read_batt_volt();
-	sprintf(str, "Batt:  %0.2fV (%0.1f%)\n", vbat, vbat/0.072f);
-	wmove(win_top, 3, 0);
-	wprintw(win_top, str);
+	update_batt(4, "Batt", vbat, 7.2f);
 
 	wrefresh(win_top);
 	wrefresh(win_btm);
@@ -140,8 +173,8 @@ void init_windows(){
 
 	int rows, cols;
 	getmaxyx(stdscr, rows, cols);
-	win_top = newwin(     4, cols,      0, 0); // <- h, w, y, x
-	win_btm = newwin(rows-4, cols,      4, 0);
+	win_top = newwin(     6, cols,      0, 0); // <- h, w, y, x
+	win_btm = newwin(rows-6, cols,      6, 0);
 	// scrollok(mid, true);
 	noecho();
 	refresh(); // Print it on to the real screen
@@ -207,7 +240,11 @@ char* fetch_command(){
 
 void fetch_execute_command(){
 	char* buffer = fetch_command();
-	if( (strlen(buffer) > 5) && (buffer[0] == 'm') && (buffer[1] == 'v') ){
+	if ( !strcmp(buffer, "q") || !strcmp(buffer, "quit") || !strcmp(buffer, "exit")){
+		ctrlc_handler(0);
+		return;
+	}
+	else if( (strlen(buffer) > 5) && (buffer[0] == 'm') && (buffer[1] == 'v') ){
 		float dist, angle;
 		sscanf(buffer, "mv %f %f", &dist, &angle);
 		// rotate(angle);
