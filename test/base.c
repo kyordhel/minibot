@@ -4,6 +4,7 @@
 
 int main(int argc, char const **argv){
 	const char* serial_path = (argc > 1) ? argv[1] : "/dev/ttyUSB0";
+	printf("Testing minibot mobile base.\n");
 
 	// 1. Initialize serial port
 	if( !serial_init(serial_path) ) return -1;

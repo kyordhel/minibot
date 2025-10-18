@@ -4,6 +4,7 @@
 
 int main(int argc, char const **argv){
 	const char* i2c_bus_path = (argc > 1) ? argv[1] : "/dev/i2c-1";
+	printf("Testing minibot light detection turret.\n");
 
 	// 1. Initialize I²C bus
 	if( !i2c_init(i2c_bus_path) ) return -1;
