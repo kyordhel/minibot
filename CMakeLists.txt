@@ -39,6 +39,9 @@ target_include_directories(minibot-driver
   ${PROJECT_SOURCE_DIR}/include
 )
 
+target_link_libraries(minibot-driver
+  m
+)
 
 # ## ##################################################################
 # Build testing binaries

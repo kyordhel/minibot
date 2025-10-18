@@ -1,4 +1,5 @@
 #include "sensors.h"
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -131,19 +132,35 @@ uint8_t lidar_sens_init(){
 }
 
 
-bool dist_sens_read(float data[6]){
+bool dist_sens_read(float data[8]){
+	// Distance sensor GP2Y0A51SK0F
+	// Datasheet on: https://www.pololu.com/file/download/GP2Y0A41SK0F.pdf.pdf?file_id=0J845
+	// Best curve approximation is: y = 3.0162 e^(-0.2733x) + 0.3349
+	// Where x is distance in cm and y is the sensor voltage.
+	//
+	// All voltajes are between 0.25 and 2.50
+	// Values outside this range are set to -1
+	//
+	// Best curve approximation is: d = 7.4634 v^-0.8972 - 1.9711
+	// Where d is distance in cm and v is the sensor voltage, OR
+	//     d[meters] = 0.074634·v^-0.8972 - 0.019711
 	uint8_t raw[8];
+	float voltage;
 	bool res = adc_read_all(DIST_SEN_ADDR, raw);
-	for(uint8_t i = 0; i < 6; ++i)
-		data[i] = raw[i]/255.0;
+	for(uint8_t i = 0; i < 8; ++i){
+		voltage = raw[i] * 0.19607843; // 5V / 255
+		data[i] = ((voltage < 0.25) || (voltage >= 2.50)) ? -1.0f :
+		          0.074634 * pow(voltage, -0.8972) - 0.019711;
+	}
 	return res;
 }
 
 
-bool dist_sens_readu(uint8_t data[6]){
+bool dist_sens_readu(uint8_t data[8]){
+	return adc_read_all(DIST_SEN_ADDR, data);
 	uint8_t raw[8];
 	bool res = adc_read_all(DIST_SEN_ADDR, raw);
-	for(uint8_t i = 0; i < 6; ++i)
+	for(uint8_t i = 0; i < 8; ++i)
 		data[i] = raw[i];
 	return res;
 }
