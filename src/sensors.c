@@ -138,7 +138,7 @@ bool dist_sens_read(float data[6]){
 	// Best curve approximation is: y = 3.0162 e^(-0.2733x) + 0.3349
 	// Where x is distance in cm and y is the sensor voltage.
 	//
-	// All voltajes are between 0.25 and 2.50
+	// All voltajes are between 0.33 and 2.60
 	// Values outside this range are set to -1
 	//
 	// Best curve approximation is: d = 7.4634 v^-0.8972 - 1.9711
@@ -147,9 +147,9 @@ bool dist_sens_read(float data[6]){
 	uint8_t raw[8];
 	float voltage;
 	bool res = adc_read_all(DIST_SEN_ADDR, raw);
-	for(uint8_t i = 0; i < 8; ++i){
-		voltage = raw[i] * 0.19607843; // 5V / 255
-		data[i] = ((voltage < 0.25) || (voltage >= 2.50)) ? -1.0f :
+	for(uint8_t i = 0; i < 6; ++i){
+		voltage = raw[i] * 5.0f / 255.0f; // 5V / 255
+		data[i] = ((voltage < 0.33) || (voltage > 2.60)) ? -1.0f :
 		          0.074634 * pow(voltage, -0.8972) - 0.019711;
 	}
 	return res;
