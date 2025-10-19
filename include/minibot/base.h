@@ -31,6 +31,11 @@ struct{
 bool init_mc(const char* serial_path);
 
 /**
+ * Disconnects from the motor board and closes the serial port
+ */
+void disconnect_mc();
+
+/**
  * Stops the robot by setting all PWMs to zero
  */
 void stop();

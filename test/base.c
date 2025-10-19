@@ -1,7 +1,10 @@
 #include <stdio.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <unistd.h> // sleep()
 #include <minibot/base.h>
+
+void ctrlc_handler(int signum);
 
 int main(int argc, char const **argv){
 	const char* serial_path = (argc > 1) ? argv[1] : "/dev/ttyUSB0";
@@ -16,6 +19,7 @@ int main(int argc, char const **argv){
 		fprintf(stderr, "Controller board not found\n");
 		return -1;
 	}
+	signal(SIGINT, ctrlc_handler);
 
 	float vbat = read_batt_volt();
 	printf("Battery level: %0.2fV (%0.1f%)\n", vbat, 100.0*(vbat-4.5)/2.7);
@@ -45,4 +49,14 @@ int main(int argc, char const **argv){
 	printf("Robot will turn to the left\n");
 	res = rotate(1.5708);
 	printf("Robot turned %0.1f°\n\n", res * 57.3);
+
+	disconnect_mc();
 }
+
+
+void ctrlc_handler(int signum){
+	stop();
+	disconnect_mc();
+	exit(0);
+}
+

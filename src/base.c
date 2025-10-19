@@ -99,7 +99,7 @@ bool serial_init(const char* serial_path){
 	struct termios tty;
 	if(tcgetattr(serial, &tty)) {
 		fprintf(stderr, "Error %i reading serial port attributes: %s\n", errno, strerror(errno));
-		close(serial);
+		close(serial); serial = 0;
 		return false;
 	}
 	// Clear settings:
@@ -132,7 +132,7 @@ bool serial_init(const char* serial_path){
 	cfsetispeed(&tty, B115200);
 	if(tcsetattr(serial, TCSANOW, &tty)) {
 		fprintf(stderr, "Error %i setting serial port attributes: %s\n", errno, strerror(errno));
-		close(serial);
+		close(serial); serial = 0;
 		return false;
 	}
 	return true;
@@ -434,6 +434,13 @@ float rotate(float angle){
 	return curr_ang;
 }
 
+
+void disconnect_mc(){
+	if(!serial) return;
+	stop();
+	close(serial);
+	serial = 0;
+}
 
 /* ** *****************************************************************
 * Function Definitions (helpers)
