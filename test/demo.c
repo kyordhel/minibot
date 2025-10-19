@@ -52,12 +52,13 @@ int main(int argc, char const **argv){
 	while(true){
 		get_light_source(&ls_angle, &ls_strength);
 		if(ls_strength < 0.1){ // Arrived to light source
+			printf("Arrived to light source (r=%0.3f, θ=%0.1f)\n", ls_strength, ls_angle*57.3);
 			usleep(1000000);
 			continue;
 		}
 		printf("Light source detected: %s\n", get_light_quadrant_name(ls_angle));
 		obs = detect_obstacles();
-		printf(" Obstacles? %s\n", get_obstacle_name(obs));
+		printf("  Obstacles? %s\n", get_obstacle_name(obs));
 		if( obs ) avoid_obstacle(obs);
 		else      move_towards_light(ls_angle);
 		usleep(1000000);
@@ -157,7 +158,7 @@ void move_towards_light(float ls_angle){
 
 
 void mv(float dist, float angle){
-	printf("mv %0.1f %0.1f\n", 100*dist, 360*angle/(2*M_PI));
+	printf("  mv %0.1f %0.1f\n", 100*dist, 360*angle/(2*M_PI));
 	rotate(angle);
 	move_y(dist);
 }

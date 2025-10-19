@@ -405,7 +405,6 @@ float rotate(float angle){
 	                 .front = e0.front - est_steps, .back  = e0.back + est_steps   };
 	err = err_ = errI = errD = (encoders){0, 0, 0, 0};
 
-	printf("ef = % +5d % +5d % +5d % +5d\n", ef.left, ef.right, ef.front, ef.back);
 	do{
 		if(!read_encoders_abs(&ei))	break;
 		err_ = err;
