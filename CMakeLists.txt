@@ -92,6 +92,15 @@ target_link_libraries(test-turret
 )
 
 
+add_executable(demo
+  ${PROJECT_SOURCE_DIR}/test/demo.c
+)
+
+target_link_libraries(demo
+  minibot-driver
+)
+
+
 set(CURSES_NEED_NCURSES TRUE)
 set(CURSES_NEED_WIDE TRUE)
 find_package(Curses REQUIRED)

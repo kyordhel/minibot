@@ -1,3 +1,5 @@
+#define _USE_MATH_DEFINES
+#include <math.h>
 #include <stdio.h>
 #include <unistd.h> // sleep()
 #include <minibot/sensors.h>
@@ -16,12 +18,19 @@ int main(int argc, char const **argv){
 
 	// 4. Poll
 	float data[8];
+	float x, y;
 
 	printf("\n");
 	while(true){
+		x = y = 0;
 		printf("\rLight:");
 		light_sens_read(data);
-		for(uint8_t i = 0; i < 8; ++i) printf(" %0.4f", data[i]);
+		for(uint8_t i = 0; i < 8; ++i) {
+			printf(" %0.4f", data[i]);
+			x+= data[i] * cos(i * 2.0 * M_PI / 8.0 );
+			y+= data[i] * sin(i * 2.0 * M_PI / 8.0 );
+		}
+		printf("| Dir: %0.4f", atan2(y, x));
 		fflush(stdout);
 		usleep(100000);
 	}
