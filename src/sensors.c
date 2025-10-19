@@ -132,7 +132,7 @@ uint8_t lidar_sens_init(){
 }
 
 
-bool dist_sens_read(float data[8]){
+bool dist_sens_read(float data[6]){
 	// Distance sensor GP2Y0A51SK0F
 	// Datasheet on: https://www.pololu.com/file/download/GP2Y0A41SK0F.pdf.pdf?file_id=0J845
 	// Best curve approximation is: y = 3.0162 e^(-0.2733x) + 0.3349
@@ -156,11 +156,10 @@ bool dist_sens_read(float data[8]){
 }
 
 
-bool dist_sens_readu(uint8_t data[8]){
-	return adc_read_all(DIST_SEN_ADDR, data);
+bool dist_sens_readu(uint8_t data[6]){
 	uint8_t raw[8];
 	bool res = adc_read_all(DIST_SEN_ADDR, raw);
-	for(uint8_t i = 0; i < 8; ++i)
+	for(uint8_t i = 0; i < 6; ++i)
 		data[i] = raw[i];
 	return res;
 }

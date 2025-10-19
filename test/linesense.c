@@ -15,13 +15,17 @@ int main(int argc, char const **argv){
 	floor_sens_init();
 
 	// 4. Poll
-	float data[8];
+	float data[4];
+	uint8_t raw[4];
 
 	printf("\n");
 	while(true){
 		printf("\rFloor:");
 		floor_sens_read(data);
+		floor_sens_read_raw(raw);
 		for(uint8_t i = 0; i < 4; ++i) printf(" %0.4f", data[i]);
+		printf(" |");
+		for(uint8_t i = 0; i < 4; ++i) printf(" % 3d", raw[i]);
 		fflush(stdout);
 		usleep(100000);
 	}
