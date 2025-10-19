@@ -44,6 +44,7 @@ struct{
 * Global variables
 ** ** ****************************************************************/
 static int serial = 0;
+static bool __abort_move = true;
 flash_data fd;
 static spds_t current_spd;
 static spds_t currbrd_spd;
@@ -245,6 +246,7 @@ bool read_encoders_dt(encoders* e){
 
 
 void stop(){
+	__abort_move = true;
 	set_pwm(0, 0, 0, 0);
 }
 
@@ -328,6 +330,7 @@ float move_y(float dist){
 
 	stop();
 	if(dist == 0) return 0;
+	__abort_move = false;
 	read_encoders_abs(&e0);
 	ef = (encoders){ .left = e0.left + est_steps, .right = e0.right + est_steps, .front = e0.front, .back = e0.back };
 	err = err_ = errI = errD = (encoders){0, 0, 0, 0};
@@ -343,6 +346,7 @@ float move_y(float dist){
 
 		// printf("pwml = KP * %d + KI * %d + KD * %d = %0.3f\n", err.left, errI.left, errD.left, pwml);
 		// printf("pwmr = KP * %d + KI * %d + KD * %d = %0.3f\n", err.right, errI.right , errD.right, pwmr);
+		if( __abort_move ) break;
 		set_pwm(pwml, pwmr, 0, 0);
 		usleep(10000);
 	}while( abs((err.right + err.left) / 2) > 200 ); // About 2cm
@@ -395,6 +399,7 @@ float rotate(float angle){
 
 	stop();
 	if(angle == 0) return 0;
+	__abort_move = false;
 	read_encoders_abs(&e0);
 	ef = (encoders){ .left  = e0.left - est_steps,  .right = e0.right + est_steps,
 	                 .front = e0.front - est_steps, .back  = e0.back + est_steps   };
@@ -416,6 +421,7 @@ float rotate(float angle){
 		// curr_ang = (diff.front - diff.back - diff.right + diff.left) / (4 * 766.5);
 		// printf("pwml = KP * %d + KI * %d + KD * %d = %0.3f\n", err.left, errI.left, errD.left, pwml);
 		// printf("pwmr = KP * %d + KI * %d + KD * %d = %0.3f\n | %+0.3f", err.right, errI.right , errD.right, pwmr, curr_ang);
+		if( __abort_move ) break;
 		set_pwm(pwml, pwmr, pwmf, pwmb);
 		usleep(10000);
 	}while( abs((err.front - err.back - err.right + err.left) / 4) > 100 ); // About 2cm or 7.5°
