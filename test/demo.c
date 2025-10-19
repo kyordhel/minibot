@@ -56,7 +56,7 @@ int main(int argc, char const **argv){
 			usleep(1000000);
 			continue;
 		}
-		printf("Light source detected: %s\n", get_light_quadrant_name(ls_angle));
+		printf("Light source detected: %s (θ=%0.1f)\n", get_light_quadrant_name(ls_angle), ls_angle*57.3);
 		obs = detect_obstacles();
 		printf("  Obstacles? %s\n", get_obstacle_name(obs));
 		if( obs ) avoid_obstacle(obs);
