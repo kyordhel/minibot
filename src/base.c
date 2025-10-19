@@ -349,7 +349,7 @@ float move_y(float dist){
 		if( __abort_move ) break;
 		set_pwm(pwml, pwmr, 0, 0);
 		usleep(10000);
-	}while( abs((err.right + err.left) / 2) > 200 ); // About 2cm
+	}while( (abs(err.right + err.left) / 2) > 200 ); // About 2cm
 
 	read_encoders_abs(&ei);
 	diff = enc_diff(ei, e0);
@@ -423,7 +423,8 @@ float rotate(float angle){
 		if( __abort_move ) break;
 		set_pwm(pwml, pwmr, pwmf, pwmb);
 		usleep(10000);
-	}while( abs((err.front - err.back - err.right + err.left) / 4) > 100 ); // About 2cm or 7.5°
+	// }while( abs((err.front - err.back - err.right + err.left) / 4) > 100 ); // About 2cm or 7.5°
+	}while( fabsf(curr_ang - angle) > 0.09 ); // About 5–7°
 
 	read_encoders_abs(&ei);
 	diff = enc_diff(ei, e0);
