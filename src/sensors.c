@@ -156,14 +156,13 @@ bool dist_sens_read(float data[6]){
 }
 
 
-bool dist_sens_readu(uint8_t data[6]){
+bool dist_sens_read_raw(uint8_t data[6]){
 	uint8_t raw[8];
 	bool res = adc_read_all(DIST_SEN_ADDR, raw);
 	for(uint8_t i = 0; i < 6; ++i)
 		data[i] = raw[i];
 	return res;
 }
-
 
 
 bool floor_sens_read(float data[4]){
@@ -176,6 +175,16 @@ bool floor_sens_read(float data[4]){
 	return res;
 }
 
+bool floor_sens_read_raw(uint8_t data[4]){
+	uint8_t raw[8];
+	bool res = adc_read_all(FLOOR_SEN_ADDR, raw);
+	data[0] = raw[3];
+	data[1] = raw[2];
+	data[2] = raw[1];
+	data[3] = raw[0];
+	return res;
+}
+
 
 bool light_sens_read(float data[8]){
 	uint8_t raw[8];
@@ -185,7 +194,12 @@ bool light_sens_read(float data[8]){
 }
 
 
-bool lidar_sens_readu(uint8_t data[8]){
+bool light_sens_read_raw(uint8_t data[8]){
+	return adc_read_all(LIGHT_SEN_ADDR, data);
+}
+
+
+bool lidar_sens_read_raw(uint8_t data[8]){
 	for(uint8_t i = 0; i < 8; ++i){
 		if(!lidars[i]) break;
 		int res = lidar_read(lidars[i]);

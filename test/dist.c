@@ -22,7 +22,7 @@ int main(int argc, char const **argv){
 	while(true){
 		printf("\rDistance:");
 		dist_sens_read(data);
-		dist_sens_readu(raw);
+		dist_sens_read_raw(raw);
 		for(uint8_t i = 0; i < 6; ++i) printf(" %+0.3f", data[i]);
 		printf(" |");
 		for(uint8_t i = 0; i < 6; ++i) printf(" % 3d", raw[i]);
