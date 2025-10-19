@@ -87,7 +87,7 @@ void init_sensors(const char* i2c_bus_path){
 	floor_ok = floor_sens_init();
 	printf("Floor sensor initialization: %s\n", floor_ok ? "OK" : "Err");
 	// 3.3. Initialize obstacle detectors (LIDAR) on 0x70
-	dist_ok  = lidar_sens_init();
+	dist_ok  = dist_sens_init();
 	printf("IR obstacle detection initialization: %s\n", dist_ok ? "OK" : "Err");
 	// 3.3. Initialize obstacle detectors (LIDAR) on 0x70
 	lidar_ok = (lidar_count = lidar_sens_init()) > 0;

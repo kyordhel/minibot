@@ -318,7 +318,7 @@ float rotate(float angle){
 		}
 		diff = enc_diff(ef, ei);
 		int32_t w_avg = (diff.right - diff.left + diff.back - diff.front) / 4;
-		curr_ang = w_avg / 168.11;
+		curr_ang = w_avg / 16.11;
 		// printf("WAvg: %d, Ang: %0.2f, Cur: %0.2f, Err: %0.2f\n", w_avg, angle, curr_ang, fabsf(angle - curr_ang));
 	}while( fabsf(angle - curr_ang) > 0.3 );
 

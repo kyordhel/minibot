@@ -5,7 +5,7 @@
 
 // Base PWM to use for mv commands
 #ifndef BASE_PWM
-#define BASE_PWM   0.6
+#define BASE_PWM   0.72
 #endif
 
 // Base SPEED to use for mv commands

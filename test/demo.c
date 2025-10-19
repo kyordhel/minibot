@@ -1,7 +1,9 @@
+#define BASE_PWM   0.8
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <errno.h>
 #include <stdio.h>
+#include <signal.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,12 +21,18 @@ enum {
 	OBS_FRONT = 0x03
 } typedef obstacle_t;
 
+
 void init_base(const char* serial_path);
 void init_sensors(const char* i2c_bus_path);
 void get_light_source(float* ls_angle, float* ls_strength);
 void move_towards_light(float ls_angle);
 obstacle_t detect_obstacles();
 void avoid_obstacle(obstacle_t obs);
+const char* get_light_quadrant_name(float ls_angle);
+const char* get_obstacle_name(obstacle_t obs);
+void mv(float dist, float angle);
+void ctrlc_handler(int signum);
+
 
 int main(int argc, char const **argv){
 	const char* i2c_bus_path = (argc > 1) ? argv[1] : "/dev/i2c-1";
@@ -32,8 +40,11 @@ int main(int argc, char const **argv){
 
 	init_sensors(i2c_bus_path);
 	init_base(serial_path);
+	signal(SIGINT, ctrlc_handler);
 
-	printf("Minibot demo: behavior 1.\n");
+	printf("Minibot demo: behavior 1\n");
+	float vbat = read_batt_volt();
+	printf("Battery level: %0.2fV (%0.1f%)\n", vbat, 100.0*vbat/7.2);
 
 	obstacle_t obs;
 	float ls_angle, ls_strength;
@@ -44,8 +55,9 @@ int main(int argc, char const **argv){
 			usleep(1000000);
 			continue;
 		}
-
+		printf("Light source detected: %s\n", get_light_quadrant_name(ls_angle));
 		obs = detect_obstacles();
+		printf(" Obstacles? %s\n", get_obstacle_name(obs));
 		if( obs ) avoid_obstacle(obs);
 		else      move_towards_light(ls_angle);
 	}
@@ -55,13 +67,13 @@ int main(int argc, char const **argv){
 
 void get_light_source(float* ls_angle, float* ls_strength){
 	/*
-	* Sensor order: UNKNOWN
-	*	300° 0° 60° 120° 180° 240°
+	* Sensor order (y = front):
+	*	90° 45° 0° 315° 270° 225° 180° 135°
 	*/
 	float data[8];
 
 	*ls_angle = *ls_strength = 0;
-	if(!light_sens_read(data)) return;
+	if( !light_sens_read(data) ) return;
 
 	float x = 0, y = 0;
 	for(uint8_t i = 0; i < 8; ++i) {
@@ -70,6 +82,38 @@ void get_light_source(float* ls_angle, float* ls_strength){
 	}
 	*ls_angle    = atan2(y, x);
 	*ls_strength = sqrt(x*x + y*y);
+}
+
+
+const char* get_light_quadrant_name(float ls_angle){
+	// Front at 90° (y axis) range from 112.5–67.5
+	// 1. Normalize angle to range [0, 7] (8 quadrants)
+	const float TwoPi = 2*M_PI;
+	static const char quadrants[8][16] = {
+		"left",
+		"front-left",
+		"front",
+		"front-right",
+		"right",
+		"back-right",
+		"back",
+		"back-left",
+	};
+	// Map angle to quadrant
+	ls_angle+= 0.3927;
+	while(ls_angle > TwoPi) ls_angle-= TwoPi;
+	uint8_t qi = 8 * (ls_angle / TwoPi);
+	return quadrants[qi];
+}
+
+
+const char* get_obstacle_name(obstacle_t obs){
+	switch(obs){
+		case OBS_NONE:  return "none";
+		case OBS_LEFT:  return "left";
+		case OBS_RIGHT: return "right";
+		case OBS_FRONT: return "front";
+	}
 }
 
 
@@ -96,22 +140,25 @@ void avoid_obstacle(obstacle_t obs){
 	switch(obs){
 		case OBS_NONE: return;
 		case OBS_LEFT:
-			rotate(-M_PI_4);
-			move_y(ADVANCE);
+			mv(ADVANCE, -M_PI_4);
 		case OBS_RIGHT:
-			rotate(M_PI_4);
-			move_y(ADVANCE);
+			mv(ADVANCE,  M_PI_4);
 		case OBS_FRONT:
-			rotate(M_PI_2);
-			move_y(ADVANCE);
-			rotate(-M_PI_2);
+			mv(ADVANCE,  M_PI_2);
+			mv(      0, -M_PI_2);
 	}
 }
 
 
 void move_towards_light(float ls_angle){
-	rotate(ls_angle);
-	move_y(0.1);
+	mv(0.1, ls_angle);
+}
+
+
+void mv(float dist, float angle){
+	printf("mv %0.1f %0.1f\n", 100*dist, 360*angle/(2*M_PI));
+	// rotate(angle);
+	// move_y(dist);
 }
 
 
@@ -146,7 +193,15 @@ void init_sensors(const char* i2c_bus_path){
 	printf("Light sensor initialization: %s\n", light_ok ? "OK" : "Err");
 	if( !light_ok ) exit(-1);
 	// 3.3. Initialize obstacle detectors (IR)
-	dist_ok  = lidar_sens_init();
+	dist_ok  = dist_sens_init();
 	printf("IR obstacle detection initialization: %s\n", dist_ok ? "OK" : "Err");
 	if( !dist_ok ) exit(-1);
 }
+
+
+void ctrlc_handler(int signum){
+	set_pwm(0, 0, 0, 0);
+	stop();
+	exit(0);
+}
+

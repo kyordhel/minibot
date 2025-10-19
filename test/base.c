@@ -31,8 +31,11 @@ int main(int argc, char const **argv){
 	printf("\n");
 
 	printf("Robot will turn to the left\n");
-	rotate(7.162);
+	rotate(1.5708);
 	sleep(2);
 	printf("Robot will turn to the right\n");
-	rotate(-7.162);
+	rotate(-3.1416);
+	sleep(2);
+	printf("Robot will turn to the left\n");
+	rotate(1.5708);
 }
