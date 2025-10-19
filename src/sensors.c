@@ -61,7 +61,8 @@ static void lidar_start_cont(int period_ms); // Default 100ms
 static void lidar_stop_cont();
 
 static int adc_read(uint8_t addr, uint8_t ch);
-static bool adc_read_all(uint8_t addr, uint8_t data[8]);
+static bool adc_read_range(uint8_t addr, uint8_t* data, uint8_t first_ch, uint8_t last_ch);
+static inline bool adc_read_all(uint8_t addr, uint8_t data[8]);
 static inline uint8_t adc_ch2C(uint8_t ch);
 
 static void swap(uint8_t* var, size_t i, size_t j);
@@ -144,9 +145,9 @@ bool dist_sens_read(float data[6]){
 	// Best curve approximation is: d = 7.4634 v^-0.8972 - 1.9711
 	// Where d is distance in cm and v is the sensor voltage, OR
 	//     d[meters] = 0.074634·v^-0.8972 - 0.019711
-	uint8_t raw[8];
+	uint8_t raw[6];
 	float voltage;
-	bool res = adc_read_all(DIST_SEN_ADDR, raw);
+	bool res = adc_read_range(DIST_SEN_ADDR, raw, 0, 5);
 	for(uint8_t i = 0; i < 6; ++i){
 		voltage = raw[i] * 5.0f / 255.0f; // 5V / 255
 		data[i] = ((voltage < 0.33) || (voltage > 2.60)) ? -1.0f :
@@ -157,17 +158,13 @@ bool dist_sens_read(float data[6]){
 
 
 bool dist_sens_read_raw(uint8_t data[6]){
-	uint8_t raw[8];
-	bool res = adc_read_all(DIST_SEN_ADDR, raw);
-	for(uint8_t i = 0; i < 6; ++i)
-		data[i] = raw[i];
-	return res;
+	return adc_read_range(DIST_SEN_ADDR, data, 0, 5);
 }
 
 
 bool floor_sens_read(float data[4]){
-	uint8_t raw[8];
-	bool res = adc_read_all(FLOOR_SEN_ADDR, raw);
+	uint8_t raw[4];
+	bool res = adc_read_range(FLOOR_SEN_ADDR, raw, 0, 3);
 	data[0] = raw[3]/255.0f;
 	data[1] = raw[2]/255.0f;
 	data[2] = raw[1]/255.0f;
@@ -176,12 +173,9 @@ bool floor_sens_read(float data[4]){
 }
 
 bool floor_sens_read_raw(uint8_t data[4]){
-	uint8_t raw[8];
-	bool res = adc_read_all(FLOOR_SEN_ADDR, raw);
-	data[0] = raw[3];
-	data[1] = raw[2];
-	data[2] = raw[1];
-	data[3] = raw[0];
+	bool res = adc_read_range(FLOOR_SEN_ADDR, data, 0, 3);
+	swap(data, 0, 3);
+	swap(data, 1, 2);
 	return res;
 }
 
@@ -448,6 +442,7 @@ uint8_t adc_ch2C(uint8_t ch){
 	return ((ch%2 == 0) ? ch / 2 : ch / 2 | 0x04) << 4;
 }
 
+
 int adc_read(uint8_t addr, uint8_t ch){
 	if((ch < 0) || (ch > 7)) return -1;
 	uint8_t cmd = ADS7830_SINGLE | ADS7830_POWER_AD_ON | adc_ch2C(ch);
@@ -464,11 +459,13 @@ int adc_read(uint8_t addr, uint8_t ch){
 }
 
 
-bool adc_read_all(uint8_t addr, uint8_t data[8]){
+static
+bool adc_read_range(uint8_t addr, uint8_t* data, uint8_t first_ch, uint8_t last_ch){
 	int res;
 	uint8_t cmd;
 
-	for(uint8_t i = 0; i < 8; ++i) {
+	if(!data || (first_ch > last_ch)) return false;
+	for(uint8_t i = first_ch; i <= last_ch; ++i) {
 		cmd = ADS7830_SINGLE | ADS7830_POWER_AD_ON | adc_ch2C(i);
 		struct i2c_msg messages[] = {
 			{ addr,        0, 1, &cmd },
@@ -479,6 +476,12 @@ bool adc_read_all(uint8_t addr, uint8_t data[8]){
 		if (res != 2) return false;
 	}
 	return true;
+}
+
+
+static inline
+bool adc_read_all(uint8_t addr, uint8_t data[8]){
+	return adc_read_range(addr, data, 0, 7);
 }
 
 
