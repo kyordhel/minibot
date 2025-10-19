@@ -46,6 +46,12 @@ void stop();
 float read_batt_volt();
 
 /**
+ * Reads the battery charge as percentage in range [0, 100].
+ * Percentage is interpolated 4.5V and 7.2V
+ */
+float read_batt_perc();
+
+/**
  * Reads the absolute count value of all encoders
  * @param  e A pointer to a encoders structure
  * @return   true if encoders were successfully read and e contains

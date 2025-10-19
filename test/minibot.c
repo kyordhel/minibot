@@ -120,7 +120,7 @@ void update_sen_info(int row, const char* caption, float* data, uint8_t dcount, 
 
 void update_batt(int row, const char* caption, float vbat, float maxVbat){
 	char str[64];
-	sprintf(str, "Batt:  %0.2fV (%0.1f%)\n", vbat, 100.0*(vbat-4.5)/(maxVbat-4.5));
+	sprintf(str, "Batt:  %0.2fV (%0.1f%)\n", vbat, read_batt_volt(), read_batt_perc());
 	wmove(win_top, row, 0);
 	wprintw(win_top, str);
 }

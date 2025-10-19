@@ -21,8 +21,7 @@ int main(int argc, char const **argv){
 	}
 	signal(SIGINT, ctrlc_handler);
 
-	float vbat = read_batt_volt();
-	printf("Battery level: %0.2fV (%0.1f%)\n", vbat, 100.0*(vbat-4.5)/2.7);
+	printf("Battery level: %0.2fV (%0.1f%)\n", read_batt_volt(), read_batt_perc());
 
 	float res;
 	encoders e;

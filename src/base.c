@@ -217,6 +217,14 @@ float read_batt_volt(){
 }
 
 
+float read_batt_perc(){
+	float batt = read_batt_volt();
+	if(batt < 4.5) return 0;
+	else if(batt > 7.2) return 100;
+	return (batt - 4.5) / 0.027;
+}
+
+
 bool read_encoders_abs(encoders* e){
 	static char buffer[64];
 	if(!e) return false;
