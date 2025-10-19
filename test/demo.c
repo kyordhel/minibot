@@ -60,6 +60,7 @@ int main(int argc, char const **argv){
 		printf(" Obstacles? %s\n", get_obstacle_name(obs));
 		if( obs ) avoid_obstacle(obs);
 		else      move_towards_light(ls_angle);
+		usleep(1000000);
 	}
 	return 0;
 }
@@ -126,9 +127,9 @@ obstacle_t detect_obstacles(){
 	*/
 	float data[6];
 	dist_sens_read(data);
-	bool ol = (data[0] * 0.5) <= OBS_DST;
-	bool of = (data[1] * 1.0) <= OBS_DST;
-	bool or = (data[2] * 0.5) <= OBS_DST;
+	bool ol = ( data[0] > 0 ) && ( (data[0] * 0.5) <= OBS_DST );
+	bool of = ( data[1] > 0 ) && ( (data[1] * 1.0) <= OBS_DST );
+	bool or = ( data[2] > 0 ) && ( (data[2] * 0.5) <= OBS_DST );
 	if( of || (ol && or) ) return OBS_FRONT;
 	else if( ol ) return OBS_LEFT;
 	else if( or ) return OBS_RIGHT;
