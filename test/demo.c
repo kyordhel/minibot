@@ -44,7 +44,7 @@ int main(int argc, char const **argv){
 
 	printf("Minibot demo: behavior 1\n");
 	float vbat = read_batt_volt();
-	printf("Battery level: %0.2fV (%0.1f%)\n", vbat, 100.0*vbat/7.2);
+	printf("Battery level: %0.2fV (%0.1f%)\n", vbat, 100.0*(vbat-4.5)/2.7);
 
 	obstacle_t obs;
 	float ls_angle, ls_strength;

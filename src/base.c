@@ -13,9 +13,9 @@
 #include <pthread.h>
 #include <termios.h>
 
-const float KP = 0.004;
-const float KI = 0.00005; //0.00025;
-const float KD = 0.004; //0.000125;
+const float KP = 0.0030;
+const float KI = 0.00002; //0.00025;
+const float KD = 0.0030; //0.000125;
 
 /* ** *****************************************************************
 * Types and structures
@@ -324,13 +324,12 @@ float move_y(float dist){
 	encoders diff, e0, ei, ef, err, errI, errD, err_;
 	float curr_dist = 0;
 	float pwml, pwmr;
-	int32_t enc_dist = dist * 9260;
-	int16_t sgn = dist < 0 ? -1.0 : 1.0;
+	int32_t est_steps = dist * 9260; // 926/0.1
 
 	stop();
 	if(dist == 0) return 0;
 	read_encoders_abs(&e0);
-	ef = (encoders){ .left = e0.left + enc_dist, .right = e0.right + enc_dist, .front = e0.front, .back = e0.back };
+	ef = (encoders){ .left = e0.left + est_steps, .right = e0.right + est_steps, .front = e0.front, .back = e0.back };
 	err = err_ = errI = errD = (encoders){0, 0, 0, 0};
 
 	do{
@@ -346,19 +345,19 @@ float move_y(float dist){
 		// printf("pwmr = KP * %d + KI * %d + KD * %d = %0.3f\n", err.right, errI.right , errD.right, pwmr);
 		set_pwm(pwml, pwmr, 0, 0);
 		usleep(10000);
-	}while( abs((err.right + err.left) / 2) > 200 );
+	}while( abs((err.right + err.left) / 2) > 200 ); // About 2cm
 
 	read_encoders_abs(&ei);
 	diff = enc_diff(ei, e0);
-	curr_dist = 0.1 * (diff.right + diff.left) / (2.0 * 926); //168.11;
+	curr_dist = (diff.right + diff.left) / (2 * 9260.0);
 	stop(); // Stop motors after turn
 	usleep(4000);// Wait for command to arrive
 	return curr_dist;
 }
 
-
+/*
 float rotate(float angle){
-	// 360° → ~4816 encoder pulses
+	// 360° → ~4722–4816 encoder pulses
 	encoders ei, ef, diff;
 	int32_t w_avg;
 	float curr_ang = 0;
@@ -382,6 +381,48 @@ float rotate(float angle){
 		// printf("WAvg: %d, Ang: %0.2f, Cur: %0.2f, Err: %0.2f\n", w_avg, angle, curr_ang, fabsf(angle - curr_ang));
 	}while( fabsf(angle - curr_ang) > 0.3 );
 
+	stop(); // Stop motors after turn
+	usleep(4000);// Wait for command to arrive
+	return curr_ang;
+}
+*/
+float rotate(float angle){
+	// 360° → ~4722–4816 encoder pulses
+	encoders diff, e0, ei, ef, err, errI, errD, err_;
+	float curr_ang = 0;
+	float pwml, pwmr, pwmf, pwmb;
+	int32_t est_steps = angle * 751.5; // 4722 / 2π
+
+	stop();
+	if(angle == 0) return 0;
+	read_encoders_abs(&e0);
+	ef = (encoders){ .left  = e0.left - est_steps,  .right = e0.right + est_steps,
+	                 .front = e0.front - est_steps, .back  = e0.back + est_steps   };
+	err = err_ = errI = errD = (encoders){0, 0, 0, 0};
+
+	printf("ef = % +5d % +5d % +5d % +5d\n", ef.left, ef.right, ef.front, ef.back);
+	do{
+		if(!read_encoders_abs(&ei))	break;
+		err_ = err;
+		err = enc_diff(ef, ei);
+	    enc_acc(&errI, err);
+	    errD = enc_diff(err, err_);
+		pwmf = 0.8 * KP * err.front + 0.2 * KI * errI.front + KD * errD.front;
+		pwmb = 0.8 * KP * err.back  + 0.2 * KI * errI.back  + KD * errD.back;
+		pwml = 0.8 * KP * err.left  + 0.2 * KI * errI.left  + KD * errD.left;
+		pwmr = 0.8 * KP * err.right + 0.2 * KI * errI.right + KD * errD.right;
+
+		// diff = enc_diff(ei, e0);
+		// curr_ang = (diff.front - diff.back - diff.right + diff.left) / (4 * 766.5);
+		// printf("pwml = KP * %d + KI * %d + KD * %d = %0.3f\n", err.left, errI.left, errD.left, pwml);
+		// printf("pwmr = KP * %d + KI * %d + KD * %d = %0.3f\n | %+0.3f", err.right, errI.right , errD.right, pwmr, curr_ang);
+		set_pwm(pwml, pwmr, pwmf, pwmb);
+		usleep(10000);
+	}while( abs((err.front - err.back - err.right + err.left) / 4) > 100 ); // About 2cm or 7.5°
+
+	read_encoders_abs(&ei);
+	diff = enc_diff(ei, e0);
+	curr_ang = (diff.front - diff.back - diff.right + diff.left) / (4 * 751.5);
 	stop(); // Stop motors after turn
 	usleep(4000);// Wait for command to arrive
 	return curr_ang;

@@ -18,7 +18,7 @@ int main(int argc, char const **argv){
 	}
 
 	float vbat = read_batt_volt();
-	printf("Battery level: %0.2fV (%0.1f%)\n", vbat, vbat/0.072f);
+	printf("Battery level: %0.2fV (%0.1f%)\n", vbat, 100.0*(vbat-4.5)/2.7);
 
 	float res;
 	encoders e;
@@ -34,14 +34,15 @@ int main(int argc, char const **argv){
 	sleep(2);
 	printf("\n");
 
-	exit(0);
-
 	printf("Robot will turn to the left\n");
-	rotate(1.5708);
+	res = rotate(1.5708);
+	printf("Robot turned %0.1f°\n\n", res * 57.3);
 	sleep(2);
 	printf("Robot will turn to the right\n");
-	rotate(-3.1416);
+	res = rotate(-3.1416);
+	printf("Robot turned %0.1f°\n\n", res * 57.3);
 	sleep(2);
 	printf("Robot will turn to the left\n");
-	rotate(1.5708);
+	res = rotate(1.5708);
+	printf("Robot turned %0.1f°\n\n", res * 57.3);
 }
