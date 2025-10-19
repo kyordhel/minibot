@@ -70,6 +70,7 @@ static inline int32_t enc_avg_diff(encoders e1, encoders e0);
 static inline int32_t enc_avg_diff(encoders e1, encoders e0);
 static inline void update_current_pwm_values(float l, float r, float f, float b);
 static inline void update_current_speed_values(float l, float r, float f, float b);
+static inline void update_current_board_speed_values(float l, float r, float f, float b);
 
 
 /* ** *****************************************************************
@@ -283,7 +284,7 @@ void set_board_speed(float left, float right, float front, float back){
 	char buffer[32];
 	clamp2one(&left);	clamp2one(&right);
 	clamp2one(&front);	clamp2one(&back);
-	update_current_speed_values(left, right, front, back);
+	update_current_board_speed_values(left, right, front, back);
 	int16_t l = 1000 * left;
 	int16_t r = 1000 * right;
 	int16_t f = 1000 * front;
@@ -521,8 +522,21 @@ static inline
 void update_current_speed_values(float l, float r, float f, float b){
 	current_pwm.left  = 0;    current_pwm.front = 0;
 	current_pwm.back  = 0;    current_pwm.right = 0;
+	currbrd_spd.left  = 0;    currbrd_spd.front = 0;
+	currbrd_spd.back  = 0;    currbrd_spd.right = 0;
 	current_spd.left  = l;    current_spd.front = f;
 	current_spd.back  = b;    current_spd.right = r;
+}
+
+
+static inline
+void update_current_board_speed_values(float l, float r, float f, float b){
+	current_pwm.left  = 0;    current_pwm.front = 0;
+	current_pwm.back  = 0;    current_pwm.right = 0;
+	currbrd_spd.left  = l;    currbrd_spd.front = f;
+	currbrd_spd.back  = b;    currbrd_spd.right = r;
+	current_spd.left  = 0;    current_spd.front = 0;
+	current_spd.back  = 0;    current_spd.right = 0;
 }
 /*
 Encoders: 78-80 pulses / 10ms (max speed, pwm=3600)
