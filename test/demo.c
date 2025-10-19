@@ -51,7 +51,7 @@ int main(int argc, char const **argv){
 
 	while(true){
 		get_light_source(&ls_angle, &ls_strength);
-		if(ls_strength < 0.1){ // Arrived to light source
+		if(ls_strength < 0.05){ // Arrived to light source
 			printf("Arrived to light source (r=%0.3f, θ=%0.1f)\n", ls_strength, ls_angle*57.3);
 			usleep(1000000);
 			continue;
