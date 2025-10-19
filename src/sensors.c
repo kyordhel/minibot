@@ -149,7 +149,7 @@ bool dist_sens_read(float data[6]){
 	float voltage;
 	bool res = adc_read_range(DIST_SEN_ADDR, raw, 0, 5);
 	for(uint8_t i = 0; i < 6; ++i){
-		voltage = raw[i] * 5.0f / 255.0f; // 5V / 255
+		voltage = raw[i] * 5.0f / 255.0f;
 		data[i] = ((voltage < 0.33) || (voltage > 2.60)) ? -1.0f :
 		          0.074634 * pow(voltage, -0.8972) - 0.019711;
 	}

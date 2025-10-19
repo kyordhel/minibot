@@ -10,7 +10,12 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <termios.h>
+
+const float KP = 0.004;
+const float KI = 0.00005; //0.00025;
+const float KD = 0.004; //0.000125;
 
 /* ** *****************************************************************
 * Types and structures
@@ -41,6 +46,7 @@ struct{
 static int serial = 0;
 flash_data fd;
 static spds_t current_spd;
+static spds_t currbrd_spd;
 static pwms_t current_pwm;
 
 
@@ -56,6 +62,8 @@ bool serial_readline(char* str, size_t max);
 ** ** ****************************************************************/
 static inline void clamp(float*value, float min, float max);
 static inline void clamp2one(float*value);
+static inline void enc_acc(encoders *e, encoders other);
+static inline encoders enc_add(encoders e1, encoders e0);
 static inline encoders enc_diff(encoders e1, encoders e0);
 static inline int32_t enc_avg_diff(encoders e1, encoders e0);
 static inline int32_t enc_avg_diff(encoders e1, encoders e0);
@@ -208,7 +216,7 @@ float read_batt_volt(){
 }
 
 
-bool read_encoders(encoders* e){
+bool read_encoders_abs(encoders* e){
 	static char buffer[64];
 	if(!e) return false;
 	serial_writeline("$upload:1,0,0#$upload:0,0,0#");
@@ -217,6 +225,20 @@ bool read_encoders(encoders* e){
 		return false;
 	}
 	sscanf(buffer, "$MAll:%d,%d,%d,%d#", &e->left, &e->front, &e->back, &e->right);
+	// printf("buffer: %s\n", buffer);
+	return true;
+}
+
+
+bool read_encoders_dt(encoders* e){
+	static char buffer[64];
+	if(!e) return false;
+	serial_writeline("$upload:0,1,0#$upload:0,0,0#");
+	if( !serial_readline(buffer, sizeof(buffer)) ){
+		e->left = e->front = e->back = e->right = 0;
+		return false;
+	}
+	sscanf(buffer, "$MTEP:%d,%d,%d,%d#", &e->left, &e->front, &e->back, &e->right);
 	// printf("buffer: %s\n", buffer);
 	return true;
 }
@@ -247,7 +269,7 @@ void get_pwm(float* left, float* right, float* front, float* back){
 }
 
 
-void set_speed(float left, float right, float front, float back){
+void set_board_speed(float left, float right, float front, float back){
 	char buffer[32];
 	clamp2one(&left);	clamp2one(&right);
 	clamp2one(&front);	clamp2one(&back);
@@ -261,12 +283,12 @@ void set_speed(float left, float right, float front, float back){
 }
 
 
-void get_speed(float* left, float* right, float* front, float* back){
+void get_board_speed(float* left, float* right, float* front, float* back){
 	*left  = current_spd.left;     *right = current_spd.right;
 	*front = current_spd.front;    *back  = current_spd.back;
 }
 
-
+/*
 float move_y(float dist){
 	// 0.1m → ~926 encoder pulses
 	encoders ei, ef, diff;
@@ -275,13 +297,13 @@ float move_y(float dist){
 
 	stop();
 	if(dist == 0) return 0;
-	read_encoders(&ei);
+	read_encoders_abs(&ei);
 	set_pwm(sgn * 1.1 * BASE_PWM, sgn * 1.1 * BASE_PWM, 0, 0);
 	do{
 		usleep(10000);
 		// if(angle > 0) set_speed2(-base_speed,  base_speed, -base_speed,  base_speed);
 		// else          set_speed2( base_speed, -base_speed,  base_speed, -base_speed);
-		if(!read_encoders(&ef)){
+		if(!read_encoders_abs(&ef)){
 			fprintf(stderr, "Error reading encoders.\n");
 			break;
 		}
@@ -296,6 +318,44 @@ float move_y(float dist){
 	usleep(4000);// Wait for command to arrive
 	return curr_dist;
 }
+*/
+float move_y(float dist){
+	// 0.1m → ~926 encoder pulses
+	encoders diff, e0, ei, ef, err, errI, errD, err_;
+	float curr_dist = 0;
+	float pwml, pwmr;
+	int32_t enc_dist = dist * 9260;
+	int16_t sgn = dist < 0 ? -1.0 : 1.0;
+
+	stop();
+	if(dist == 0) return 0;
+	read_encoders_abs(&e0);
+	ef = (encoders){ .left = e0.left + enc_dist, .right = e0.right + enc_dist, .front = e0.front, .back = e0.back };
+	err = err_ = errI = errD = (encoders){0, 0, 0, 0};
+
+	do{
+		if(!read_encoders_abs(&ei))	break;
+		err_ = err;
+		err = enc_diff(ef, ei);
+	    enc_acc(&errI, err);
+	    errD = enc_diff(err, err_);
+		pwml = KP * err.left  + KI * errI.left  + KD * errD.left;
+		pwmr = KP * err.right + KI * errI.right + KD * errD.right;
+
+		// printf("pwml = KP * %d + KI * %d + KD * %d = %0.3f\n", err.left, errI.left, errD.left, pwml);
+		// printf("pwmr = KP * %d + KI * %d + KD * %d = %0.3f\n", err.right, errI.right , errD.right, pwmr);
+		set_pwm(pwml, pwmr, 0, 0);
+		usleep(10000);
+	}while( abs((err.right + err.left) / 2) > 200 );
+
+	read_encoders_abs(&ei);
+	diff = enc_diff(ei, e0);
+	curr_dist = 0.1 * (diff.right + diff.left) / (2.0 * 926); //168.11;
+	stop(); // Stop motors after turn
+	usleep(4000);// Wait for command to arrive
+	return curr_dist;
+}
+
 
 float rotate(float angle){
 	// 360° → ~4816 encoder pulses
@@ -305,14 +365,14 @@ float rotate(float angle){
 
 	stop();
 	if(angle == 0) return 0;
-	read_encoders(&ei);
+	read_encoders_abs(&ei);
 	if(angle > 0) set_pwm(-BASE_PWM,  BASE_PWM, -BASE_PWM,  BASE_PWM);
 	else          set_pwm( BASE_PWM, -BASE_PWM,  BASE_PWM, -BASE_PWM);
 	do{
 		usleep(10000);
 		// if(angle > 0) set_speed(-base_speed,  base_speed, -base_speed,  base_speed);
 		// else          set_speed( base_speed, -base_speed,  base_speed, -base_speed);
-		if(!read_encoders(&ef)){
+		if(!read_encoders_abs(&ef)){
 			fprintf(stderr, "Error reading encoders.\n");
 			break;
 		}
@@ -343,6 +403,24 @@ encoders enc_diff(encoders e1, encoders e0){
 }
 
 static inline
+void enc_acc(encoders *e, encoders other){
+	e->front+= other.front;
+	e->back += other.back;
+	e->left += other.left;
+	e->right+= other.right;
+}
+
+static inline
+encoders enc_add(encoders e1, encoders e0){
+	encoders sum;
+	sum.front = e1.front + e0.front;
+	sum.back  = e1.back  + e0.back;
+	sum.left  = e1.left  + e0.left;
+	sum.right = e1.right + e0.right;
+	return sum;
+}
+
+static inline
 int32_t enc_avg_diff(encoders e1, encoders e0){
 	return (
 		abs(e1.front - e0.front) +
@@ -370,6 +448,8 @@ static inline
 void update_current_pwm_values(float l, float r, float f, float b){
 	current_spd.left  = 0;    current_spd.front = 0;
 	current_spd.back  = 0;    current_spd.right = 0;
+	currbrd_spd.left  = 0;    currbrd_spd.front = 0;
+	currbrd_spd.back  = 0;    currbrd_spd.right = 0;
 	current_pwm.left  = l;    current_pwm.front = f;
 	current_pwm.back  = b;    current_pwm.right = r;
 }

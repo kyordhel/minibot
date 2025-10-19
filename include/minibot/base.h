@@ -41,12 +41,20 @@ void stop();
 float read_batt_volt();
 
 /**
- * Reads the raw value of all encoders
+ * Reads the absolute count value of all encoders
  * @param  e A pointer to a encoders structure
  * @return   true if encoders were successfully read and e contains
  *           valid information; false otherwise
  */
-bool read_encoders(encoders* e);
+bool read_encoders_abs(encoders* e);
+
+/**
+ * Reads the encoder pulse count value of all encoders over the last 10ms
+ * @param  e A pointer to a encoders structure
+ * @return   true if encoders were successfully read and e contains
+ *           valid information; false otherwise
+ */
+bool read_encoders_dt(encoders* e);
 
 /**
  * Rotates the robot
@@ -78,20 +86,33 @@ void set_pwm(float left, float right, float front, float back);
 void get_pwm(float* left, float* right, float* front, float* back);
 
 /**
+ * Sets the speed in radians per second for all four wheels
+ * The speed is maintained using PWM an internal PWM
+*/
+void set_speed(float left, float right, float front, float back);
+
+/**
  * Sets the speed for all four wheels using the driver board's
  * speed controller. Values are NORMALIZED in the interval [-1, 1]
  */
-void set_speed(float left, float right, float front, float back);
+void set_board_speed(float left, float right, float front, float back);
+
+/**
+ * Retrieves the latest speed values for all the four wheels in rad/s.
+ * @remark    Return zeroes when using PWM or board SPD commands.
+ */
+void get_speed(float* left, float* right, float* front, float* back);
 
 /**
  * Retrieves the latest normalized speed values sent to the driver
  * board's speed controllet for all the four wheels.
- * @remark    Return zeroes when using PWM commands.
+ * @remark    Return zeroes when using PWM or board SPD commands.
  */
-void get_speed(float* left, float* right, float* front, float* back);
+void get_board_speed(float* left, float* right, float* front, float* back);
 
 inline void set_pwm2(float left, float right){ set_pwm(left, right, 0, 0); }
 inline void set_speed2(float left, float right){ set_speed(left, right, 0, 0); }
+inline void set_board_speed2(float left, float right){ set_board_speed(left, right, 0, 0); }
 
 /**
  * Initializes the serial port used to communicate with the robot's
