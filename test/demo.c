@@ -91,20 +91,21 @@ void get_light_source(float* ls_angle, float* ls_strength){
 const char* get_light_quadrant_name(float ls_angle){
 	// Front at 90° (y axis) range from 112.5–67.5
 	// 1. Normalize angle to range [0, 7] (8 quadrants)
-	const float TwoPi = 2*M_PI;
+	static const float TwoPi = 2*M_PI;
 	static const char quadrants[8][16] = {
-		"left",
-		"front-left",
-		"front",
-		"front-right",
 		"right",
-		"back-right",
-		"back",
+		"front-right",
+		"front",
+		"front-left",
+		"left",
 		"back-left",
+		"back",
+		"back-right",
 	};
 	// Map angle to quadrant
 	ls_angle+= 0.3927;
-	while(ls_angle > TwoPi) ls_angle-= TwoPi;
+	while(ls_angle < 0) ls_angle+= TwoPi;
+	while(ls_angle >= TwoPi) ls_angle-= TwoPi;
 	uint8_t qi = 8 * (ls_angle / TwoPi);
 	return quadrants[qi];
 }
