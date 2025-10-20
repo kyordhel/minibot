@@ -70,17 +70,18 @@ int main(int argc, char const **argv){
 void get_light_source(float* ls_angle, float* ls_strength){
 	/*
 	* Sensor order (y = front):
-	*	90° 45° 0° 315° 270° 225° 180° 135°
+	*	   90° 45° 0° 315° 270° 225° 180° 135°
 	*/
 	float data[8];
 
 	*ls_angle = *ls_strength = 0;
 	if( !light_sens_read(data) ) return;
 
-	float x = 0, y = 0;
+	float x = 0, y = 0, phi = M_PI_2;
 	for(uint8_t i = 0; i < 8; ++i) {
-		x+= data[i] * cos(i * 2.0 * M_PI / 8.0 );
-		y+= data[i] * sin(i * 2.0 * M_PI / 8.0 );
+		x+= data[i] * cos(phi);
+		y+= data[i] * sin(phi);
+		phi-= M_PI_4;
 	}
 	*ls_angle    = atan2(y, x);
 	*ls_strength = sqrt(x*x + y*y);
