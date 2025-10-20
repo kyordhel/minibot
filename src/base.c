@@ -355,6 +355,7 @@ float move_y(float dist){
 
 		// printf("pwml = KP * %d + KI * %d + KD * %d = %0.3f\n", err.left, errI.left, errD.left, pwml);
 		// printf("pwmr = KP * %d + KI * %d + KD * %d = %0.3f\n", err.right, errI.right , errD.right, pwmr);
+		printf("pwml: % 4d, pwmr: % 4d | Dist: %+0.3f\n", err.left, errI.left, errD.left, pwml, curr_dist);
 		if( __abort_move ) break;
 		set_pwm(pwml, pwmr, 0, 0);
 		usleep(10000);
@@ -426,10 +427,11 @@ float rotate(float angle){
 		pwml = 0.8 * KP * err.left  + 0.2 * KI * errI.left  + KD * errD.left;
 		pwmr = 0.8 * KP * err.right + 0.2 * KI * errI.right + KD * errD.right;
 
-		// diff = enc_diff(ei, e0);
-		// curr_ang = (diff.front - diff.back - diff.right + diff.left) / (4 * 766.5);
+		diff = enc_diff(ei, e0);
+		curr_ang = (diff.front - diff.back - diff.right + diff.left) / (4 * 766.5);
 		// printf("pwml = KP * %d + KI * %d + KD * %d = %0.3f\n", err.left, errI.left, errD.left, pwml);
-		// printf("pwmr = KP * %d + KI * %d + KD * %d = %0.3f\n | %+0.3f", err.right, errI.right , errD.right, pwmr, curr_ang);
+		// printf("pwmr = KP * %d + KI * %d + KD * %d = %0.3f | %+0.3f\n", err.right, errI.right , errD.right, pwmr, curr_ang);
+		printf("pwml: % 4d, pwmr: % 4d, pwmf: % 4d, pwmb: % 4d | Angle: %+0.3f\n", err.left, errI.left, errD.left, pwml, curr_ang);
 		if( __abort_move ) break;
 		set_pwm(pwml, pwmr, pwmf, pwmb);
 		usleep(10000);

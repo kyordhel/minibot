@@ -171,8 +171,8 @@ void move_towards_light(float ls_angle){
 
 void mv(float dist, float angle){
 	printf("  mv %0.1f %0.1f\n", 100*dist, 360*angle/(2*M_PI));
-	// rotate(angle);
-	// move_y(dist);
+	rotate(angle);
+	move_y(dist);
 }
 
 
