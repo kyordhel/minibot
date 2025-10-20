@@ -407,7 +407,8 @@ float rotate(float angle){
 	int32_t est_steps = angle * 751.5; // 4722 / 2π
 
 	stop();
-	if(angle == 0) return 0;
+	// if(angle == 0) return 0;
+	if( fabsf(angle) < 18) return 0; // Ignores angles smaller than incertitude.
 	__abort_move = false;
 	read_encoders_abs(&e0);
 	ef = (encoders){ .left  = e0.left - est_steps,  .right = e0.right + est_steps,
