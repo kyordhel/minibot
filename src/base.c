@@ -358,7 +358,7 @@ float move_y(float dist){
 		printf("pwml: % 4d, pwmr: % 4d | Dist: %+0.3f\n", err.left, errI.left, errD.left, pwml, curr_dist);
 		if( __abort_move ) break;
 		set_pwm(pwml, pwmr, 0, 0);
-		usleep(10000);
+		usleep(1000);
 	}while( (abs(err.right + err.left) / 2) > 200 ); // About 2cm
 
 	read_encoders_abs(&ei);
@@ -434,9 +434,9 @@ float rotate(float angle){
 		printf("pwml: % 4d, pwmr: % 4d, pwmf: % 4d, pwmb: % 4d | Angle: %+0.3f\n", err.left, errI.left, errD.left, pwml, curr_ang);
 		if( __abort_move ) break;
 		set_pwm(pwml, pwmr, pwmf, pwmb);
-		usleep(10000);
-	// }while( abs((err.front - err.back - err.right + err.left) / 4) > 100 ); // About 2cm or 7.5°
-	}while( fabsf(curr_ang - angle) > 0.09 ); // About 5–7°
+		usleep(1000);
+	}while( abs((err.front - err.back - err.right + err.left) / 4) > 100 ); // About 2cm or 7.5°
+	// }while( fabsf(curr_ang - angle) > 0.09 ); // About 5–7°
 
 	read_encoders_abs(&ei);
 	diff = enc_diff(ei, e0);
