@@ -154,7 +154,17 @@ void avoid_obstacle(obstacle_t obs){
 
 
 void move_towards_light(float ls_angle){
-	mv(0.1, ls_angle);
+	static const float M_TWO_PI = 2*M_PI;
+	// Robot advances over y axis (90° means no rotation).
+	// Thus angle must be shifted -90°
+	// 1. Substract π/2 from angle
+	float ra = ls_angle - M_PI_2;
+	// 2. Whatever the angle is, normalize it to [0, 2π)
+	while(ra < 0) ra += M_TWO_PI;
+	while(ra >= M_TWO_PI) ra -= M_TWO_PI;
+	// 3. Shift back to [-π, π] for the shortest turn
+	if(ra > M_PI) ra -= M_TWO_PI;
+	mv(0.1, ra);
 }
 
 
